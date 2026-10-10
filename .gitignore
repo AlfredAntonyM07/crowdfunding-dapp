@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+test/node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+out/
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Remix artifacts (if you download them)
+artifacts/
+cache/
+
+# Temporary files
+*.tmp
+*.bak

@@ -1,0 +1,17 @@
+{
+  "name": "crowdfunding-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Automated tests for Crowdfunding.sol — Assignment II (711523BCB007)",
+  "scripts": {
+    "test": "node crowdfunding.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ethers": "6.13.4",
+    "ganache": "7.9.2",
+    "solc": "0.8.24"
+  }
+}

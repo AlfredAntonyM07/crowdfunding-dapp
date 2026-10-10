@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crowdfunding DApp</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7fb; --card: #ffffff; --text: #1c2230; --muted: #667085;
+      --accent: #3b5bdb; --ok: #2b8a3e; --bad: #c92a2a; --line: #e3e6ee;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #12151d; --card: #1b2030; --text: #e8ebf3; --muted: #9aa3b8;
+        --accent: #748ffc; --ok: #51cf66; --bad: #ff6b6b; --line: #2b3248;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+    main { max-width: 680px; margin: 0 auto; padding: 28px 16px 56px; }
+    h1   { font-size: 1.55rem; margin-bottom: 4px; }
+    .sub { color: var(--muted); font-size: .88rem; margin-bottom: 24px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 12px; padding: 18px; margin-bottom: 18px;
+    }
+    .card h2 { font-size: .95rem; font-weight: 600; margin-bottom: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    label { display: block; font-size: .83rem; color: var(--muted); margin-bottom: 4px; }
+    input {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--line);
+      border-radius: 8px; background: transparent; color: var(--text);
+      font-size: .95rem; outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .row > * { flex: 1 1 140px; }
+    button {
+      padding: 10px 16px; border: none; border-radius: 8px;
+      background: var(--accent); color: #fff; font-size: .92rem;
+      cursor: pointer; transition: opacity .15s;
+    }
+    button:hover:not(:disabled) { opacity: .88; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    button.outline {
+      background: transparent; color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    dl { display: grid; grid-template-columns: 170px 1fr; gap: 7px 12px; font-size: .9rem; }
+    dt { color: var(--muted); }
+    dd { word-break: break-all; }
+    .bar { height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; margin: 14px 0 4px; }
+    .bar > span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .4s; }
+    .pct { font-size: .83rem; color: var(--muted); }
+    #msg { min-height: 1.3em; font-size: .88rem; margin-top: 10px; }
+    .ok  { color: var(--ok); }
+    .bad { color: var(--bad); }
+    .tag {
+      display: inline-block; font-size: .78rem; padding: 2px 8px;
+      border-radius: 4px; background: var(--line); color: var(--muted);
+      vertical-align: middle; margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Crowdfunding DApp</h1>
+  <p class="sub">
+    Assignment II — Principles of Blockchain and Distributed Technology &nbsp;|&nbsp;
+    Alfred Antony M &nbsp;(711523BCB007)
+  </p>
+
+  <!-- ── Section 1: Connect ─────────────────────────────────────── -->
+  <section class="card">
+    <h2>1 · Connect MetaMask</h2>
+    <div class="row" style="margin-top:0">
+      <button id="btnConnect">Connect MetaMask</button>
+    </div>
+    <p style="margin-top:10px; font-size:.85rem;">
+      Connected account: <span id="acct" style="color:var(--accent)">not connected</span>
+    </p>
+  </section>
+
+  <!-- ── Section 2: Load contract ──────────────────────────────── -->
+  <section class="card">
+    <h2>2 · Load Contract</h2>
+    <label for="addr">Contract address</label>
+    <input id="addr" placeholder="0x..." autocomplete="off" spellcheck="false" />
+    <div class="row">
+      <button id="btnLoad" disabled>Load Campaign</button>
+    </div>
+  </section>
+
+  <!-- ── Section 3: Campaign info ──────────────────────────────── -->
+  <section class="card">
+    <h2>3 · Campaign Info</h2>
+    <dl>
+      <dt>Project name</dt><dd id="name">—</dd>
+      <dt>Status</dt>      <dd id="status">—</dd>
+      <dt>Owner</dt>       <dd id="owner">—</dd>
+      <dt>Goal</dt>        <dd id="goal">—</dd>
+      <dt>Total raised</dt><dd id="raised">—</dd>
+      <dt>Deadline</dt>    <dd id="deadline">—</dd>
+      <dt>Time left</dt>   <dd id="timeleft">—</dd>
+      <dt>Contributors</dt><dd id="count">—</dd>
+      <dt>My contribution</dt><dd id="mine">—</dd>
+    </dl>
+    <div class="bar"><span id="progress"></span></div>
+    <p class="pct" id="pctText"></p>
+  </section>
+
+  <!-- ── Section 4: Actions ────────────────────────────────────── -->
+  <section class="card">
+    <h2>4 · Actions</h2>
+
+    <label for="amount">Amount to contribute (ETH)</label>
+    <input id="amount" type="number" min="0.001" step="0.001" placeholder="e.g. 1" />
+    <div class="row">
+      <button id="btnContribute" disabled>Contribute</button>
+      <button id="btnRefund"     disabled class="outline">Claim Refund</button>
+      <button id="btnWithdraw"   disabled class="outline">Withdraw Funds (owner)</button>
+    </div>
+
+    <p id="msg"></p>
+  </section>
+</main>
+
+<script>
+  // ── ABI (matching Crowdfunding.sol) ──────────────────────────────────────
+  const ABI = [
+    "function projectName() view returns (string)",
+    "function owner() view returns (address)",
+    "function goal() view returns (uint256)",
+    "function deadline() view returns (uint256)",
+    "function totalRaised() view returns (uint256)",
+    "function fundsWithdrawn() view returns (bool)",
+    "function contributions(address) view returns (uint256)",
+    "function getContributorsCount() view returns (uint256)",
+    "function timeLeft() view returns (uint256)",
+    "function getStatus() view returns (uint8)",
+    "function contribute() payable",
+    "function withdrawFunds()",
+    "function refund()"
+  ];
+
+  const STATUS_LABEL = ["Active", "Successful", "Failed"];
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  const $  = id => document.getElementById(id);
+  const fw = wei => ethers.formatEther(wei) + " ETH";
+  const say = (text, cls) => {
+    const m = $("msg");
+    m.textContent = text;
+    m.className   = cls || "";
+  };
+  const errMsg = e =>
+    e.reason ||
+    (e.info && e.info.error && e.info.error.message) ||
+    e.shortMessage ||
+    e.message ||
+    String(e);
+
+  let provider, signer, account, contract, pollTimer;
+
+  // ── Connect MetaMask ─────────────────────────────────────────────────────
+  async function connect() {
+    if (!window.ethereum) {
+      say("MetaMask not detected. Install the MetaMask extension and refresh.", "bad");
+      return;
+    }
+    try {
+      provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer  = await provider.getSigner();
+      account = await signer.getAddress();
+      $("acct").textContent = account;
+      $("btnLoad").disabled = false;
+      const net = await provider.getNetwork();
+      say("Connected — chain id " + net.chainId + ". Paste the contract address and click Load Campaign.", "ok");
+    } catch (e) { say("Connection failed: " + errMsg(e), "bad"); }
+  }
+
+  // ── Load contract ─────────────────────────────────────────────────────────
+  async function loadContract() {
+    const addr = $("addr").value.trim();
+    if (!ethers.isAddress(addr)) { say("Enter a valid contract address.", "bad"); return; }
+    try {
+      const code = await provider.getCode(addr);
+      if (code === "0x") { say("No contract found at this address on the current network.", "bad"); return; }
+      contract = new ethers.Contract(addr, ABI, signer);
+      await refresh();
+      ["btnContribute", "btnRefund", "btnWithdraw"].forEach(id => $(id).disabled = false);
+      say("Campaign loaded successfully.", "ok");
+      clearInterval(pollTimer);
+      pollTimer = setInterval(() => refresh().catch(() => {}), 15000);
+    } catch (e) { say("Failed to load contract: " + errMsg(e), "bad"); }
+  }
+
+  // ── Refresh campaign data ─────────────────────────────────────────────────
+  async function refresh() {
+    const [name, owner_, goal_, deadline_, raised, count, left, statusCode, mine] =
+      await Promise.all([
+        contract.projectName(),
+        contract.owner(),
+        contract.goal(),
+        contract.deadline(),
+        contract.totalRaised(),
+        contract.getContributorsCount(),
+        contract.timeLeft(),
+        contract.getStatus(),
+        contract.contributions(account)
+      ]);
+
+    $("name").textContent     = name;
+    $("status").textContent   = STATUS_LABEL[Number(statusCode)] || statusCode;
+    $("owner").textContent    = owner_ +
+      (owner_.toLowerCase() === account.toLowerCase() ? " (you)" : "");
+    $("goal").textContent     = fw(goal_);
+    $("raised").textContent   = fw(raised);
+    $("deadline").textContent = new Date(Number(deadline_) * 1000).toLocaleString();
+    $("count").textContent    = count.toString();
+    $("mine").textContent     = fw(mine);
+
+    const leftN = Number(left);
+    $("timeleft").textContent = leftN === 0
+      ? "Campaign ended"
+      : Math.floor(leftN / 60) + " min " + (leftN % 60) + " s";
+
+    const pct = goal_ === 0n ? 0 : Math.min(100, Number(raised * 10000n / goal_) / 100);
+    $("progress").style.width = pct + "%";
+    $("pctText").textContent  = pct.toFixed(1) + "% of goal";
+  }
+
+  // ── Send a transaction ────────────────────────────────────────────────────
+  async function send(label, fn) {
+    try {
+      say(label + ": confirm in MetaMask…");
+      const tx = await fn();
+      say(label + ": waiting for confirmation (" + tx.hash.slice(0, 14) + "…)");
+      await tx.wait();
+      say(label + " confirmed! Tx: " + tx.hash, "ok");
+      await refresh();
+    } catch (e) { say(label + " failed: " + errMsg(e), "bad"); }
+  }
+
+  // ── Button handlers ───────────────────────────────────────────────────────
+  $("btnConnect").onclick = connect;
+  $("btnLoad").onclick    = loadContract;
+
+  $("btnContribute").onclick = () => {
+    const v = $("amount").value;
+    if (!v || Number(v) <= 0) { say("Enter an amount greater than 0 ETH.", "bad"); return; }
+    send("Contribute", () =>
+      contract.contribute({ value: ethers.parseEther(v) })
+    );
+  };
+
+  $("btnRefund").onclick   = () => send("Refund",   () => contract.refund());
+  $("btnWithdraw").onclick = () => send("Withdraw", () => contract.withdrawFunds());
+
+  // ── MetaMask event listeners ──────────────────────────────────────────────
+  if (window.ethereum) {
+    window.ethereum.on("accountsChanged", () => location.reload());
+    window.ethereum.on("chainChanged",    () => location.reload());
+  }
+</script>
+</body>
+</html>
