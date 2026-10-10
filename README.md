@@ -1,6 +1,6 @@
 # Crowdfunding Smart Contract
 
-**Assignment II – Principles of Blockchain and Distributed Technology**
+** Principles of Blockchain and Distributed Technology**
 
 | | |
 |---|---|
